@@ -1,1 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kirim Foto ke WhatsApp</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      text-align: center;
+    }
 
+    h2 {
+      color: #333;
+    }
+
+    input[type="file"] {
+      margin: 15px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    img#preview {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    button {
+      background-color: #25d366;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1ebe5d;
+    }
+
+    p#status {
+      margin-top: 15px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h2>Ambil Foto & Kirim ke WhatsApp</h2>
+
+  <input type="file" accept="image/*" capture="environment" id="cameraInput"><br>
+  <img id="preview" style="display:none;"><br>
+  <button id="uploadBtn" style="display:none;">Upload & Kirim ke WhatsApp</button>
+  <p id="status"></p>
+
+  <script>
+    const input = document.getElementById('cameraInput');
+    const preview = document.getElementById('preview');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const status = document.getElementById('status');
+    const phoneNumber = "083830663339"; // Ganti nomor WA
+
+    let imageBase64 = "";
+
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        imageBase64 = reader.result.split(',')[1]; // hanya ambil base64
+        preview.src = reader.result;
+        preview.style.display = 'block';
+        uploadBtn.style.display = 'inline-block';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      status.innerText = "Mengupload gambar ke Imgur...";
+
+      try {
+        const res = await fetch('https://api.imgur.com/3/image', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Client-ID 69b94c09836be82', // Ganti jika punya Client ID sendiri
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ image: imageBase64 }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          const imgUrl = data.data.link;
+          status.innerText = "Berhasil! Membuka WhatsApp...";
+          const message = encodeURIComponent(`Ini fotonya:\n${imgUrl}`);
+          window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+        } else {
+          status.innerText = "Upload gagal.";
+        }
+      } catch (error) {
+        status.innerText = "Terjadi kesalahan saat upload.";
+      }
+    });
+  </script>
+</body>
+</html>
